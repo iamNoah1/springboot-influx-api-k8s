@@ -1,0 +1,4 @@
+influx.url=
+influx.token=
+influx.org=
+influx.bucket=
