@@ -7,6 +7,7 @@ import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
 
 import com.influxdb.query.FluxTable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,23 +19,23 @@ import java.util.List;
 @RestController
 public class AuditController {
 
+    @Autowired
+    InfluxDBClient client;
+
     @PostMapping("/audit")
     public void createAuditEntry(@RequestBody AuditModel audit) {
         Point auditEntry = Point.measurement("audit")
                 .time(Instant.now().toEpochMilli(), WritePrecision.MS)
             .addField("name", audit.name);
 
-        InfluxDBClient influxDBClient = InfluxDBClientFactory.create("http://127.0.0.1:8086", "0mGVvhjebwHhcNIGDVMlSJK68zBi6TmKPy-tQgmA8IcW4MLtYotEfe3V2hMAmLjdcouVk4TeeDaJqgWkuJvytw==".toCharArray(), "my-org", "my-bucket");
-
-        WriteApiBlocking writeApi = influxDBClient.getWriteApiBlocking();
-
+        WriteApiBlocking writeApi = client.getWriteApiBlocking();
         writeApi.writePoint(auditEntry);
     }
+
     @GetMapping("/audit")
     public Object[] getAuditEntries() {
-        InfluxDBClient influxDBClient = InfluxDBClientFactory.create("http://127.0.0.1:8086", "0mGVvhjebwHhcNIGDVMlSJK68zBi6TmKPy-tQgmA8IcW4MLtYotEfe3V2hMAmLjdcouVk4TeeDaJqgWkuJvytw==".toCharArray(), "my-org", "my-bucket");
         String query = String.format("from(bucket: \"%s\") |> range(start: -1h)", "my-bucket");
-        List<FluxTable> tables = influxDBClient.getQueryApi().query(query, "my-org");
+        List<FluxTable> tables = client.getQueryApi().query(query, "my-org");
         return tables.toArray();
     }
 }
